@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Мой кабинет — ӨМҮР+</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body data-page="cabinet" data-title="nav_cabinet">
+<div id="hdr"></div>
+<main id="main">
+  <section class="block">
+    <div class="wrap">
+      <h1 id="hello" data-i18n="cab_h"></h1>
+      <p class="lead" data-i18n="cab_lead"></p>
+
+      <div class="grid g2" style="margin-top:26px">
+        <div class="card">
+          <h2 data-i18n="cab_profile"></h2>
+          <p><strong id="pName"></strong></p>
+          <p class="muted"><span data-i18n="cab_phone"></span>: <span id="pPhone"></span></p>
+          <button class="btn btn-ghost" id="logoutCard" type="button" data-i18n="logout"></button>
+        </div>
+        <div class="card"><h2 data-i18n="cab_notifs"></h2><div id="notifs"></div></div>
+        <div class="card"><h2 data-i18n="cab_courses"></h2><div id="myCourses"></div></div>
+        <div class="card"><h2 data-i18n="cab_events"></h2><div id="myEvents"></div></div>
+        <div class="card"><h2 data-i18n="cab_safety"></h2><div id="mySafety"></div></div>
+        <div class="card">
+          <h2 data-i18n="cab_privacy"></h2>
+          <p data-i18n="cab_privacy_note"></p>
+          <button class="btn btn-ghost" id="resetBtn" type="button" data-i18n="cab_reset"></button>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+<div id="ftr"></div>
+
+<script src="i18n.js"></script>
+<script src="data.js"></script>
+<script src="app.js"></script>
+<script>
+OP.ready(function () {
+  var name = OP.user.name;
+  document.getElementById("hello").textContent = OP.t("cab_hello") + ", " + name + "!";
+  document.getElementById("pName").textContent = name;
+  var ph = OP.user.phone;
+  document.getElementById("pPhone").textContent = OP.maskPhone(ph);
+  document.getElementById("logoutCard").onclick = OP.logout;
+
+  /* мои курсы */
+  var started = DATA.courses.filter(function (c) { return OP.courseProgress(c).pct > 0; });
+  var last = OP.LS.get("lastLesson", null);
+  document.getElementById("myCourses").innerHTML = started.length ? started.map(function (c) {
+    var pr = OP.courseProgress(c);
+    var cta = pr.state.done ? OP.t("lesson_done") : OP.t("continue_lesson");
+    return '<p><strong>' + OP.esc(OP.pick(c.title)) + '</strong>' + (c.id === last ? ' ⭐' : '') + '</p>' +
+      '<div class="bar" role="progressbar" aria-valuenow="' + pr.pct + '" aria-valuemin="0" aria-valuemax="100"><i style="width:' + pr.pct + '%"></i></div>' +
+      '<p><a class="btn btn-ghost btn-sm" style="margin:8px 0 14px" href="lesson.html?id=' + encodeURIComponent(c.id) + '">' + OP.esc(cta) + ' (' + pr.pct + '%)</a></p>';
+  }).join("") : '<p class="muted">' + OP.esc(OP.t("cab_none_courses")) + '</p><a class="btn btn-primary btn-sm" href="learn.html">' + OP.esc(OP.t("cab_go_learn")) + '</a>';
+
+  /* мои записи */
+  var mine = DATA.events.filter(function (e) { return OP.isBooked(e.id); }).sort(function (a, b) { return a.date < b.date ? -1 : 1; });
+  document.getElementById("myEvents").innerHTML = mine.length ? mine.map(function (e) {
+    return '<p><strong>' + OP.esc(OP.pick(e.title)) + '</strong><br><span class="muted">' + OP.esc(OP.fmtDate(e.date, e.time)) + ' · ' + OP.esc(OP.pick(e.place)) + '</span></p>' +
+      '<p><button class="btn btn-ghost btn-sm" style="margin:4px 0 14px" data-book="' + e.id + '">' + OP.esc(OP.t("cancel_book")) + '</button></p>';
+  }).join("") : '<p class="muted">' + OP.esc(OP.t("cab_none_events")) + '</p><a class="btn btn-primary btn-sm" href="events.html">' + OP.esc(OP.t("cab_go_events")) + '</a>';
+
+  /* безопасность */
+  var saved = OP.LS.get("safety", {}), ids = Object.keys(saved);
+  if (ids.length) {
+    var good = ids.filter(function (k) { return saved[k]; }).length;
+    document.getElementById("mySafety").innerHTML =
+      '<p class="result-big">' + good + ' ' + OP.esc(OP.t("sim_of")) + ' ' + ids.length + '</p><p>' + OP.esc(OP.t("sim_score")) + '</p>' +
+      '<a class="btn btn-ghost btn-sm" href="safety.html">' + OP.esc(OP.t("cab_go_safety")) + '</a>';
+  } else {
+    document.getElementById("mySafety").innerHTML = '<p class="muted">' + OP.esc(OP.t("cab_none_safety")) + '</p><a class="btn btn-primary btn-sm" href="safety.html">' + OP.esc(OP.t("cab_go_safety")) + '</a>';
+  }
+
+  /* уведомления: напоминания о записях */
+  document.getElementById("notifs").innerHTML = mine.length ?
+    '<ul style="margin-left:20px">' + mine.map(function (e) {
+      return '<li>' + OP.esc(OP.t("cab_notif_event")) + ' <strong>' + OP.esc(OP.pick(e.title)) + '</strong>, ' + OP.esc(OP.fmtDate(e.date, e.time)) + '</li>';
+    }).join("") + '</ul>' : '<p class="muted">' + OP.esc(OP.t("cab_notif_none")) + '</p>';
+
+  document.getElementById("resetBtn").onclick = function () {
+    if (confirm(OP.t("cab_reset_confirm"))) OP.deleteAccount();
+  };
+});
+</script>
+</body>
+</html>

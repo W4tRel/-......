@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Обучение — ӨМҮР+</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body data-page="learn" data-title="nav_learn">
+<div id="hdr"></div>
+<main id="main">
+  <section class="block">
+    <div class="wrap">
+      <h1 data-i18n="learn_h"></h1>
+      <p class="lead" data-i18n="learn_lead"></p>
+      <div class="filters" id="filters" role="group" aria-label="Фильтр"></div>
+      <div class="grid g3" id="courses"></div>
+    </div>
+  </section>
+</main>
+<div id="ftr"></div>
+
+<script src="i18n.js"></script>
+<script src="data.js"></script>
+<script src="app.js"></script>
+<script>
+var activeCat = "all";
+OP.ready(function () {
+  var cats = ["all", "phone", "internet", "comm", "ai", "gov", "finance", "computer"]
+    .filter(function (c) { return c === "all" || DATA.courses.some(function (x) { return x.cat === c; }); });
+  var f = document.getElementById("filters");
+  f.innerHTML = cats.map(function (c) {
+    return '<button type="button" class="chip" data-cat="' + c + '" aria-pressed="' + (c === activeCat) + '">' +
+      OP.esc(c === "all" ? OP.t("f_all") : OP.t("cat_" + c)) + '</button>';
+  }).join("");
+  Array.prototype.forEach.call(f.querySelectorAll("button"), function (b) {
+    b.addEventListener("click", function () { activeCat = b.getAttribute("data-cat"); OP.page(); });
+  });
+  var list = DATA.courses.filter(function (c) { return activeCat === "all" || c.cat === activeCat; });
+  document.getElementById("courses").innerHTML = list.map(OP.courseCard).join("");
+});
+</script>
+</body>
+</html>

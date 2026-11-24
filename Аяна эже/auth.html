@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Вход — ӨМҮР+</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body data-page="auth" data-title="auth_title">
+<div id="hdr"></div>
+<main id="main">
+  <section class="block">
+    <div class="wrap auth-box">
+      <h1 id="authH"></h1>
+      <p class="lead" data-i18n="auth_lead"></p>
+
+      <div class="filters" role="group" aria-label="Вход / Кирүү">
+        <button type="button" class="chip" id="tabReg" data-i18n="tab_reg"></button>
+        <button type="button" class="chip" id="tabLogin" data-i18n="tab_login"></button>
+      </div>
+
+      <form class="card" id="regForm" novalidate>
+        <label class="field"><span data-i18n="f_name"></span>
+          <input type="text" id="rName" autocomplete="given-name" maxlength="40"></label>
+        <label class="field"><span><span data-i18n="f_phone"></span> <span class="hint" data-i18n="f_phone_hint"></span></span>
+          <input type="tel" id="rPhone" inputmode="numeric" autocomplete="tel" maxlength="16"></label>
+        <label class="field"><span data-i18n="f_pin"></span>
+          <input type="password" id="rPin" class="pin" inputmode="numeric" maxlength="4" autocomplete="new-password"></label>
+        <label class="field"><span data-i18n="f_pin2"></span>
+          <input type="password" id="rPin2" class="pin" inputmode="numeric" maxlength="4" autocomplete="new-password"></label>
+        <label class="checkline"><input type="checkbox" id="rShow"> <span data-i18n="show_pin"></span></label>
+        <label class="checkline"><input type="checkbox" id="rConsent"> <span data-i18n="auth_consent"></span></label>
+        <div class="feedback bad" id="rErr" role="alert" hidden></div>
+        <button class="btn btn-accent" type="submit" data-i18n="btn_register"></button>
+      </form>
+
+      <form class="card" id="loginForm" novalidate hidden>
+        <label class="field"><span data-i18n="f_phone"></span>
+          <input type="tel" id="lPhone" inputmode="numeric" autocomplete="tel" maxlength="16"></label>
+        <label class="field"><span data-i18n="f_pin_login"></span>
+          <input type="password" id="lPin" class="pin" inputmode="numeric" maxlength="4" autocomplete="current-password"></label>
+        <label class="checkline"><input type="checkbox" id="lShow"> <span data-i18n="show_pin"></span></label>
+        <div class="feedback bad" id="lErr" role="alert" hidden></div>
+        <button class="btn btn-primary" type="submit" data-i18n="btn_login"></button>
+      </form>
+
+      <p class="notice" style="margin-top:20px" data-i18n="auth_demo"></p>
+    </div>
+  </section>
+</main>
+<div id="ftr"></div>
+
+<script src="i18n.js"></script>
+<script src="data.js"></script>
+<script src="app.js"></script>
+<script>
+var tab = "reg", errKey = { r: "", l: "" }, bound = false;
+
+function showErr(which, key) {
+  errKey[which] = key;
+  var el = document.getElementById(which + "Err");
+  el.hidden = !key;
+  el.textContent = key ? OP.t(key) : "";
+}
+
+OP.ready(function () {
+  if (OP.user) { location.replace(OP.nextUrl()); return; }
+
+  /* вкладки и заголовок (перерисовываются при смене языка) */
+  document.getElementById("authH").textContent = OP.t(tab === "reg" ? "auth_h_reg" : "auth_h_login");
+  document.getElementById("tabReg").setAttribute("aria-pressed", tab === "reg");
+  document.getElementById("tabLogin").setAttribute("aria-pressed", tab === "login");
+  document.getElementById("regForm").hidden = tab !== "reg";
+  document.getElementById("loginForm").hidden = tab !== "login";
+  showErr("r", errKey.r); showErr("l", errKey.l);
+
+  if (bound) return;
+  bound = true;
+
+  document.getElementById("tabReg").addEventListener("click", function () { tab = "reg"; OP.page(); });
+  document.getElementById("tabLogin").addEventListener("click", function () { tab = "login"; OP.page(); });
+
+  function bindShow(chk, ids) {
+    document.getElementById(chk).addEventListener("change", function (e) {
+      ids.forEach(function (id) { document.getElementById(id).type = e.target.checked ? "text" : "password"; });
+    });
+  }
+  bindShow("rShow", ["rPin", "rPin2"]);
+  bindShow("lShow", ["lPin"]);
+
+  /* в PIN и телефон можно вводить только цифры */
+  ["rPin", "rPin2", "lPin"].forEach(function (id) {
+    document.getElementById(id).addEventListener("input", function (e) { e.target.value = e.target.value.replace(/\D/g, "").slice(0, 4); });
+  });
+  ["rPhone", "lPhone"].forEach(function (id) {
+    document.getElementById(id).addEventListener("input", function (e) { e.target.value = e.target.value.replace(/[^\d+\s-]/g, ""); });
+  });
+
+  document.getElementById("regForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var name = document.getElementById("rName").value.trim(), phone = document.getElementById("rPhone").value,
+        pin = document.getElementById("rPin").value, pin2 = document.getElementById("rPin2").value;
+    var err = !name ? "err_name" : !OP.validPhone(phone) ? "err_phone" : !OP.validPin(pin) ? "err_pin" :
+              pin !== pin2 ? "err_pin_match" : !document.getElementById("rConsent").checked ? "err_consent" : null;
+    if (!err) err = OP.register(name, phone, pin);
+    showErr("r", err);
+    if (!err) { OP.toast(OP.t("welcome_toast")); setTimeout(function () { location.href = OP.nextUrl(); }, 400); }
+  });
+
+  document.getElementById("loginForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var phone = document.getElementById("lPhone").value, pin = document.getElementById("lPin").value;
+    var err = !OP.validPhone(phone) ? "err_phone" : !OP.validPin(pin) ? "err_pin" : OP.login(phone, pin);
+    showErr("l", err);
+    if (!err) { OP.toast(OP.t("welcome_toast")); setTimeout(function () { location.href = OP.nextUrl(); }, 400); }
+  });
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Урок — ӨМҮР+</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body data-page="learn" data-title="nav_learn">
+<div id="hdr"></div>
+<main id="main">
+  <section class="block">
+    <div class="wrap" id="lesson"></div>
+  </section>
+</main>
+<div id="ftr"></div>
+
+<script src="i18n.js"></script>
+<script src="data.js"></script>
+<script src="app.js"></script>
+<script>
+var quizPick = null, quizChecked = false;
+
+OP.ready(function () {
+  var id = new URLSearchParams(location.search).get("id");
+  var c = OP.course(id), root = document.getElementById("lesson");
+  if (!c) {
+    root.innerHTML = '<a href="learn.html">' + OP.esc(OP.t("back")) + '</a><p class="empty">' + OP.esc(OP.t("no_lesson")) + '</p>';
+    return;
+  }
+  var st = OP.courseState(c.id), pr = OP.courseProgress(c);
+  var q = c.quiz;
+  var steps = c.steps.map(function (s, i) {
+    var on = st.steps.indexOf(i) !== -1;
+    return '<li class="' + (on ? "done" : "") + '"><input type="checkbox" id="st' + i + '" data-step="' + i + '"' + (on ? " checked" : "") + '>' +
+      '<label for="st' + i + '">' + OP.esc(OP.pick(s)) + '</label></li>';
+  }).join("");
+
+  var opts = q.opts.map(function (o, i) {
+    var cls = "opt";
+    if (quizChecked || st.quiz) { if (i === q.correct) cls += " right"; else if (quizChecked && i === quizPick) cls += " wrong"; }
+    return '<label class="' + cls + '"><input type="radio" name="quiz" value="' + i + '"' + ((quizPick === i || (st.quiz && i === q.correct)) ? " checked" : "") + '> <span>' + OP.esc(OP.pick(o)) + '</span></label>';
+  }).join("");
+
+  var fb = "";
+  if (quizChecked || st.quiz) {
+    var ok = st.quiz || quizPick === q.correct;
+    fb = '<div class="feedback ' + (ok ? "good" : "bad") + '" role="status"><strong>' + OP.esc(OP.t(ok ? "quiz_ok" : "quiz_no")) + '</strong><p>' + OP.esc(OP.pick(q.explain)) + '</p></div>';
+  }
+
+  var canFinish = st.steps.length === c.steps.length && st.quiz;
+
+  root.innerHTML =
+    '<a href="learn.html">' + OP.esc(OP.t("back")) + '</a>' +
+    '<div class="row" style="margin-top:10px"><span class="tag card" style="padding:3px 14px;box-shadow:none;display:inline-block">' + OP.esc(OP.t("cat_" + c.cat)) + '</span></div>' +
+    '<h1 style="margin:10px 0">' + OP.esc(OP.pick(c.title)) + '</h1>' +
+    '<p class="lead">' + OP.esc(OP.pick(c.desc)) + '</p>' +
+    '<div class="bar" style="margin:18px 0" role="progressbar" aria-valuenow="' + pr.pct + '" aria-valuemin="0" aria-valuemax="100"><i style="width:' + pr.pct + '%"></i></div>' +
+    '<div class="lesson-grid"><div>' +
+      '<div class="video" role="img" aria-label="' + OP.esc(OP.t("video_ph")) + '"><b aria-hidden="true">▶</b><span>' + OP.esc(OP.t("video_ph")) + '</span></div>' +
+      '<p class="callout">' + OP.esc(OP.t("video_note")) + '</p>' +
+      '<h2>' + OP.esc(OP.t("steps_t")) + '</h2><ul class="step-list">' + steps + '</ul>' +
+      '<h2>' + OP.esc(OP.t("practice_t")) + '</h2><p class="callout">' + OP.esc(OP.pick(c.practice)) + '</p>' +
+    '</div><div class="card">' +
+      '<h2>' + OP.esc(OP.t("quiz_t")) + '</h2>' +
+      '<fieldset class="opts"><legend>' + OP.esc(OP.pick(q.q)) + '</legend>' + opts + '</fieldset>' +
+      '<button class="btn btn-primary" id="checkBtn" type="button"' + (st.quiz ? " disabled" : "") + '>' + OP.esc(OP.t("check")) + '</button>' + fb +
+      '<hr style="border:0;border-top:2px solid var(--line);margin:18px 0">' +
+      (st.done ? '<div class="feedback good" role="status"><strong>' + OP.esc(OP.t("finished_msg")) + '</strong></div>' :
+        '<button class="btn btn-accent" id="finishBtn" type="button"' + (canFinish ? "" : " disabled") + '>' + OP.esc(OP.t("finish")) + '</button>' +
+        (canFinish ? "" : '<p class="meta muted" style="margin-top:8px">' + OP.esc(OP.t("finish_need")) + '</p>')) +
+    '</div></div>';
+
+  Array.prototype.forEach.call(root.querySelectorAll("[data-step]"), function (cb) {
+    cb.addEventListener("change", function () {
+      var cur = OP.courseState(c.id), i = parseInt(cb.getAttribute("data-step"), 10), k = cur.steps.indexOf(i);
+      if (cb.checked && k === -1) cur.steps.push(i);
+      if (!cb.checked && k !== -1) cur.steps.splice(k, 1);
+      cur.done = false;
+      OP.saveCourseState(c.id, cur); OP.page();
+    });
+  });
+  Array.prototype.forEach.call(root.querySelectorAll("input[name=quiz]"), function (r) {
+    r.addEventListener("change", function () { quizPick = parseInt(r.value, 10); });
+  });
+  var cb = document.getElementById("checkBtn");
+  if (cb) cb.addEventListener("click", function () {
+    if (quizPick === null) { OP.toast(OP.t("pick_answer")); return; }
+    quizChecked = true;
+    if (quizPick === q.correct) { var cur = OP.courseState(c.id); cur.quiz = true; OP.saveCourseState(c.id, cur); }
+    OP.page();
+  });
+  var fin = document.getElementById("finishBtn");
+  if (fin) fin.addEventListener("click", function () {
+    var cur = OP.courseState(c.id); cur.done = true; OP.saveCourseState(c.id, cur);
+    OP.toast(OP.t("finished_msg")); OP.page();
+  });
+  document.title = OP.pick(c.title) + " — ӨМҮР+";
+});
+</script>
+</body>
+</html>

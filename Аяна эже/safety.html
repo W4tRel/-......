@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Безопасность — ӨМҮР+</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body data-page="safety" data-title="nav_safety">
+<div id="hdr"></div>
+<main id="main">
+  <section class="block">
+    <div class="wrap">
+      <h1 data-i18n="safety_h"></h1>
+      <p class="lead" data-i18n="safety_lead"></p>
+
+      <h2 style="margin-top:34px" data-i18n="modules_t"></h2>
+      <div class="filters" id="modules" role="group" aria-label="Темы"></div>
+
+      <div class="card" id="sim" aria-live="polite" style="margin-top:10px"></div>
+    </div>
+  </section>
+</main>
+<div id="ftr"></div>
+
+<script src="i18n.js"></script>
+<script src="data.js"></script>
+<script src="app.js"></script>
+<script>
+/* Симулятор: полностью учебный. Ничего не отправляется и не запрашивается у пользователя. */
+var mod = "all", idx = 0, pick = null, checked = false, answers = {};
+
+function pool() { return DATA.scenarios.filter(function (s) { return mod === "all" || s.module === mod; }); }
+function reset() { idx = 0; pick = null; checked = false; answers = {}; }
+
+OP.ready(function () {
+  var mods = ["all", "sms", "email", "phone", "social", "fin", "data"];
+  var m = document.getElementById("modules");
+  m.innerHTML = mods.map(function (k) {
+    return '<button type="button" class="chip" data-mod="' + k + '" aria-pressed="' + (k === mod) + '">' +
+      OP.esc(k === "all" ? OP.t("f_all") : OP.t("mod_" + k)) + '</button>';
+  }).join("");
+  Array.prototype.forEach.call(m.querySelectorAll("button"), function (b) {
+    b.addEventListener("click", function () { mod = b.getAttribute("data-mod"); reset(); OP.page(); });
+  });
+
+  var list = pool(), sim = document.getElementById("sim");
+
+  /* итог */
+  if (idx >= list.length) {
+    var good = list.filter(function (s) { return answers[s.id] === true; }).length;
+    var rate = good / list.length;
+    var msg = rate >= 0.8 ? "sim_good" : (rate >= 0.5 ? "sim_mid" : "sim_low");
+    var saved = OP.LS.get("safety", {});
+    list.forEach(function (s) { if (s.id in answers) saved[s.id] = answers[s.id]; });
+    OP.LS.set("safety", saved);
+    sim.innerHTML =
+      '<h2>' + OP.esc(OP.t("sim_result")) + '</h2>' +
+      '<p class="result-big">' + good + ' ' + OP.esc(OP.t("sim_of")) + ' ' + list.length + '</p>' +
+      '<p>' + OP.esc(OP.t("sim_score")) + '</p>' +
+      '<div class="feedback good" role="status">' + OP.esc(OP.t(msg)) + '</div>' +
+      '<button class="btn btn-primary" id="again" type="button">' + OP.esc(OP.t("sim_again")) + '</button>';
+    document.getElementById("again").addEventListener("click", function () { reset(); OP.page(); });
+    return;
+  }
+
+  var s = list[idx];
+  var opts = s.opts.map(function (o, i) {
+    var cls = "opt";
+    if (checked) { if (o.ok) cls += " right"; else if (i === pick) cls += " wrong"; }
+    return '<label class="' + cls + '"><input type="radio" name="sim" value="' + i + '"' + (pick === i ? " checked" : "") + (checked ? " disabled" : "") + '> <span>' + OP.esc(OP.pick(o.t)) + '</span></label>';
+  }).join("");
+
+  var fb = "";
+  if (checked) {
+    var ok = s.opts[pick].ok;
+    fb = '<div class="feedback ' + (ok ? "good" : "bad") + '" role="status"><strong>' + OP.esc(OP.t(ok ? "sim_right" : "sim_wrong")) + '</strong>' +
+      '<p style="margin-top:8px"><strong>' + OP.esc(OP.t("sim_signs")) + ':</strong></p><ul>' + s.signs.map(function (x) { return '<li>' + OP.esc(OP.pick(x)) + '</li>'; }).join("") + '</ul>' +
+      '<p style="margin-top:8px"><strong>' + OP.esc(OP.t("sim_tips")) + ':</strong></p><ul>' + s.tips.map(function (x) { return '<li>' + OP.esc(OP.pick(x)) + '</li>'; }).join("") + '</ul></div>';
+  }
+
+  var last = idx === list.length - 1;
+  sim.innerHTML =
+    '<div class="sim-top"><h2>' + OP.esc(OP.t("sim_t")) + '</h2><span class="tag">' + OP.esc(OP.t("sim_scn")) + ' ' + (idx + 1) + ' ' + OP.esc(OP.t("sim_of")) + ' ' + list.length + '</span></div>' +
+    '<p class="notice">' + OP.esc(OP.t("sim_notice")) + '</p>' +
+    '<div style="margin:18px 0"><div class="phone"><div class="from"><span>' + OP.esc(OP.pick(s.channel)) + '</span><span>' + OP.esc(OP.pick(s.from)) + '</span></div>' +
+    '<div class="bubble">' + OP.esc(OP.pick(s.text)) + '</div></div></div>' +
+    '<fieldset class="opts"><legend>' + OP.esc(OP.t("sim_q")) + '</legend>' + opts + '</fieldset>' +
+    '<div class="row">' +
+      (checked ? '<button class="btn btn-primary" id="nextBtn" type="button">' + OP.esc(OP.t(last ? "sim_see" : "sim_next")) + '</button>'
+               : '<button class="btn btn-primary" id="checkBtn" type="button">' + OP.esc(OP.t("sim_check")) + '</button>') +
+    '</div>' + fb;
+
+  Array.prototype.forEach.call(sim.querySelectorAll("input[name=sim]"), function (r) {
+    r.addEventListener("change", function () { pick = parseInt(r.value, 10); });
+  });
+  var cb = document.getElementById("checkBtn");
+  if (cb) cb.addEventListener("click", function () {
+    if (pick === null) { OP.toast(OP.t("sim_pick")); return; }
+    checked = true; answers[s.id] = s.opts[pick].ok; OP.page();
+  });
+  var nb = document.getElementById("nextBtn");
+  if (nb) nb.addEventListener("click", function () { idx++; pick = null; checked = false; OP.page(); window.scrollTo({ top: 0 }); });
+});
+</script>
+</body>
+</html>

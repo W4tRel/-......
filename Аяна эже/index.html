@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ӨМҮР+</title>
+<meta name="description" content="ӨМҮР+ — платформа обучения, досуга и цифровой безопасности для людей старшего поколения Кыргызстана.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body data-page="home">
+<div id="hdr"></div>
+<main id="main">
+
+  <section class="hero">
+    <div class="wrap">
+      <span class="kicker" data-i18n="home_kicker"></span>
+      <h1 data-i18n="home_h1"></h1>
+      <p class="lead" data-i18n="home_lead"></p>
+      <div class="row">
+        <a class="btn btn-accent" href="learn.html" data-i18n="btn_start"></a>
+        <a class="btn btn-ghost" href="events.html" data-i18n="btn_events"></a>
+        <a class="btn btn-ghost" href="safety.html" data-i18n="btn_safety"></a>
+      </div>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="wrap">
+      <h2 data-i18n="dirs_t"></h2>
+      <div class="grid g3" style="margin-top:22px">
+        <a class="card dir" href="learn.html"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M2 4h6a4 4 0 0 1 4 4v13a3 3 0 0 0-3-3H2z"/><path d="M22 4h-6a4 4 0 0 0-4 4v13a3 3 0 0 1 3-3h7z"/></svg></span><h3 data-i18n="dir_learn_t"></h3><p data-i18n="dir_learn_d"></p><span class="spacer"></span><span class="go"><span data-i18n="btn_courses"></span> →</span></a>
+        <a class="card dir" href="events.html"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span><h3 data-i18n="dir_events_t"></h3><p data-i18n="dir_events_d"></p><span class="spacer"></span><span class="go"><span data-i18n="btn_events"></span> →</span></a>
+        <a class="card dir" href="safety.html"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg></span><h3 data-i18n="dir_safety_t"></h3><p data-i18n="dir_safety_d"></p><span class="spacer"></span><span class="go"><span data-i18n="btn_safety"></span> →</span></a>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" style="padding-top:0">
+    <div class="wrap">
+      <div class="band">
+        <h2 data-i18n="habit_t"></h2>
+        <p data-i18n="habit_s"></p>
+        <div class="steps3">
+          <div class="s3" style="color:var(--ink)"><div class="n">1</div><h3 data-i18n="h1t"></h3><p data-i18n="h1d"></p></div>
+          <div class="s3" style="color:var(--ink)"><div class="n">2</div><h3 data-i18n="h2t"></h3><p data-i18n="h2d"></p></div>
+          <div class="s3" style="color:var(--ink)"><div class="n">3</div><h3 data-i18n="h3t"></h3><p data-i18n="h3d"></p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" style="padding-top:20px">
+    <div class="wrap">
+      <div class="section-head"><h2 data-i18n="popular_t"></h2><a class="btn btn-ghost btn-sm" href="learn.html" data-i18n="all_courses"></a></div>
+      <div class="grid g3" id="popCourses"></div>
+    </div>
+  </section>
+
+  <section class="block" style="padding-top:20px">
+    <div class="wrap">
+      <div class="section-head"><h2 data-i18n="upcoming_t"></h2><a class="btn btn-ghost btn-sm" href="events.html" data-i18n="all_events"></a></div>
+      <div class="grid g3" id="upEvents"></div>
+    </div>
+  </section>
+
+  <section class="block" style="padding-top:20px">
+    <div class="wrap center">
+      <h2 data-i18n="band_t"></h2>
+      <p class="lead" style="margin:0 auto 22px" data-i18n="band_d"></p>
+      <a class="btn btn-primary" href="about.html" data-i18n="more_about"></a>
+    </div>
+  </section>
+
+</main>
+<div id="ftr"></div>
+
+<script src="i18n.js"></script>
+<script src="data.js"></script>
+<script src="app.js"></script>
+<script>
+OP.ready(function () {
+  document.getElementById("popCourses").innerHTML = DATA.courses.slice(0, 3).map(OP.courseCard).join("");
+  var ev = DATA.events.slice().sort(function (a, b) { return a.date < b.date ? -1 : 1; })
+    .filter(function (e) { return OP.seatsLeft(e) > 0 || OP.isBooked(e.id); }).slice(0, 3);
+  document.getElementById("upEvents").innerHTML = ev.map(OP.eventCard).join("");
+});
+</script>
+</body>
+</html>

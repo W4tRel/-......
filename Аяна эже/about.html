@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>О проекте — ӨМҮР+</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body data-page="about" data-title="nav_about">
+<div id="hdr"></div>
+<main id="main">
+
+  <section class="block">
+    <div class="wrap">
+      <h1 data-i18n="about_h"></h1>
+      <p class="lead" data-i18n="about_lead"></p>
+      <h2 style="margin-top:30px" data-i18n="mission_t"></h2>
+      <p data-i18n="mission_d"></p>
+    </div>
+  </section>
+
+  <section class="block" style="padding-top:0">
+    <div class="wrap">
+      <h2 data-i18n="values_t"></h2>
+      <div class="grid g3" style="margin-top:18px">
+        <div class="card"><h3 data-i18n="v1t"></h3><p data-i18n="v1d"></p></div>
+        <div class="card"><h3 data-i18n="v2t"></h3><p data-i18n="v2d"></p></div>
+        <div class="card"><h3 data-i18n="v3t"></h3><p data-i18n="v3d"></p></div>
+        <div class="card"><h3 data-i18n="v4t"></h3><p data-i18n="v4d"></p></div>
+        <div class="card"><h3 data-i18n="v5t"></h3><p data-i18n="v5d"></p></div>
+        <div class="card"><h3 data-i18n="v6t"></h3><p data-i18n="v6d"></p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" style="padding-top:0">
+    <div class="wrap">
+      <div class="card"><h2 data-i18n="sdg_t"></h2><p data-i18n="sdg_d"></p></div>
+    </div>
+  </section>
+
+  <section class="block" id="volunteer" style="padding-top:0">
+    <div class="wrap">
+      <div class="grid g2">
+        <div>
+          <h2 data-i18n="vol_t"></h2>
+          <p data-i18n="vol_d"></p>
+          <p class="callout" data-i18n="vol_access"></p>
+        </div>
+        <form class="card" id="volForm" novalidate>
+          <label class="field"><span data-i18n="vol_name"></span><input type="text" id="vName" autocomplete="name"></label>
+          <label class="field"><span data-i18n="vol_contact"></span><input type="text" id="vContact" autocomplete="off"></label>
+          <label class="field"><span data-i18n="vol_about"></span><textarea id="vAbout"></textarea></label>
+          <label class="opt" style="margin-bottom:16px"><input type="checkbox" id="vConsent"> <span data-i18n="vol_consent"></span></label>
+          <button class="btn btn-primary" type="submit" data-i18n="vol_send"></button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" style="padding-top:0">
+    <div class="wrap">
+      <h2 data-i18n="partners_t"></h2>
+      <p class="muted" data-i18n="partners_d"></p>
+      <div class="grid g3" style="margin-top:18px">
+        <div class="card"><h3 data-i18n="p1"></h3></div>
+        <div class="card"><h3 data-i18n="p2"></h3></div>
+        <div class="card"><h3 data-i18n="p3"></h3></div>
+        <div class="card"><h3 data-i18n="p4"></h3></div>
+        <div class="card"><h3 data-i18n="p5"></h3></div>
+        <div class="card"><h3 data-i18n="p6"></h3></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" style="padding-top:0">
+    <div class="wrap" style="max-width:820px">
+      <h2 data-i18n="faq_t"></h2>
+      <details><summary data-i18n="q1"></summary><p data-i18n="a1"></p></details>
+      <details><summary data-i18n="q2"></summary><p data-i18n="a2"></p></details>
+      <details><summary data-i18n="q3"></summary><p data-i18n="a3"></p></details>
+      <details><summary data-i18n="q4"></summary><p data-i18n="a4"></p></details>
+    </div>
+  </section>
+
+</main>
+<div id="ftr"></div>
+
+<script src="i18n.js"></script>
+<script src="data.js"></script>
+<script src="app.js"></script>
+<script>
+OP.ready(function () {
+  var f = document.getElementById("volForm");
+  /* подставляем имя и телефон из профиля, если поля пустые */
+  if (OP.user) {
+    var vn = document.getElementById("vName"), vc = document.getElementById("vContact");
+    if (!vn.value) vn.value = OP.user.name;
+    if (!vc.value) vc.value = (OP.user.phone.length === 9 ? "+996 " : "") + OP.user.phone;
+  }
+  if (f.dataset.bound) return;
+  f.dataset.bound = "1";
+  /* Демо: заявка сохраняется только в браузере. Для боевой версии нужен сервер и политика конфиденциальности. */
+  f.addEventListener("submit", function (e) {
+    e.preventDefault();
+    var n = document.getElementById("vName").value.trim(), c = document.getElementById("vContact").value.trim();
+    if (!n || !c || !document.getElementById("vConsent").checked) { OP.toast(OP.t("vol_need")); return; }
+    var list = OP.LS.get("volunteerApps", []);
+    list.push({ name: n, contact: c, about: document.getElementById("vAbout").value.trim(), date: new Date().toISOString() });
+    OP.LS.set("volunteerApps", list);
+    f.reset(); OP.toast(OP.t("vol_thanks"));
+  });
+});
+</script>
+</body>
+</html>

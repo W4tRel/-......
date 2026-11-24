@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Досуг — ӨМҮР+</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body data-page="events" data-title="nav_events">
+<div id="hdr"></div>
+<main id="main">
+  <section class="block">
+    <div class="wrap">
+      <h1 data-i18n="events_h"></h1>
+      <p class="lead" data-i18n="events_lead"></p>
+      <div class="filters" id="fFormat" role="group" aria-label="Формат"></div>
+      <div class="filters" id="fCat" role="group" aria-label="Категория"></div>
+      <div class="grid g3" id="events"></div>
+    </div>
+  </section>
+</main>
+<div id="ftr"></div>
+
+<script src="i18n.js"></script>
+<script src="data.js"></script>
+<script src="app.js"></script>
+<script>
+var fmt = "all", cat = "all";
+OP.ready(function () {
+  function chips(el, values, active, label, attr) {
+    el.innerHTML = values.map(function (v) {
+      return '<button type="button" class="chip" data-' + attr + '="' + v + '" aria-pressed="' + (v === active) + '">' + OP.esc(label(v)) + '</button>';
+    }).join("");
+    Array.prototype.forEach.call(el.querySelectorAll("button"), function (b) {
+      b.addEventListener("click", function () {
+        if (attr === "fmt") fmt = b.getAttribute("data-fmt"); else cat = b.getAttribute("data-cat");
+        OP.page();
+      });
+    });
+  }
+  chips(document.getElementById("fFormat"), ["all", "online", "offline"], fmt, function (v) { return OP.t("fmt_" + v); }, "fmt");
+  chips(document.getElementById("fCat"), ["all", "creative", "language", "club", "excursion", "edu"], cat,
+    function (v) { return v === "all" ? OP.t("f_all") : OP.t("ec_" + v); }, "cat");
+
+  var list = DATA.events.filter(function (e) { return (fmt === "all" || e.format === fmt) && (cat === "all" || e.cat === cat); })
+    .sort(function (a, b) { return a.date < b.date ? -1 : 1; });
+  document.getElementById("events").innerHTML = list.length ? list.map(OP.eventCard).join("") :
+    '<p class="empty" style="grid-column:1/-1">' + OP.esc(OP.t("no_events")) + '</p>';
+});
+</script>
+</body>
+</html>
